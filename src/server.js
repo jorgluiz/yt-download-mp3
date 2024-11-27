@@ -78,68 +78,93 @@ const fetchLatestVideo = async (req, res, next) => {
   }
 }
 
-// processVideo
-const processVideo = async (req, res) => {
-  const videoUrl = req.latestVideoLink
-  console.log(videoUrl, "rota: download-mp3")
+const { exec } = require('child_process');
 
-  if (!videoUrl || !ytdl.validateURL(videoUrl)) {
+
+const processVideo = async (req, res) => {
+  const videoUrl = req.latestVideoLink;
+  if (!videoUrl) {
     return res.status(400).json({ error: "URL de vídeo inválida ou não fornecida." });
   }
 
-  try {
-    let info = await ytdl.getInfo(videoUrl);
+  const outputFilePath = path.join(__dirname, 'downloads', 'audio.mp3');
 
-    // Obtém o título do vídeo
-    let videoTitle = info.videoDetails.title;
-    console.log("Título do vídeo:", videoTitle);
-
-    let audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
-
-    console.log('Formats with only audio: ' + audioFormats.length);
-    if (audioFormats.length === 0) {
-      return res.status(404).json({ error: "Nenhum formato de áudio disponível para este vídeo." });
+  exec(`yt-dlp -f bestaudio --extract-audio --audio-format mp3 -o "${outputFilePath}" ${videoUrl}`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Erro ao executar yt-dlp: ${error.message}`);
+      return res.status(500).json({ error: "Erro ao processar o vídeo." });
     }
 
-    // Seleciona o formato de áudio com a melhor qualidade (pode ser ajustado conforme necessário)
-    const audio = audioFormats[0]; // Ou, por exemplo, selecione o de maior bitrate
-
-    // Configura o cabeçalho para download
-    res.setHeader("Content-Disposition", `attachment; filename="${videoTitle}.mp3"`);
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("X-Video-Title", videoTitle); // Cabeçalho customizado para o título
-
-    // Baixa o áudio e encaminha para o cliente
-    const stream = ytdl(videoUrl, {
-      format: audio,
-      filter: "audioonly",
-      quality: "highestaudio",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-      },
-    })
-
-    // Encaminha o stream para a resposta
-    stream.pipe(res);
-
-    // Trata eventos de erro no stream
-    stream.on("error", (err) => {
-      console.error("Erro no stream:", err);
-      // res.status(500).send("Erro ao processar o download.");
-      res.end(); // Fecha a resposta no caso de erro
+    res.download(outputFilePath, 'audio.mp3', (err) => {
+      if (err) console.error("Erro ao enviar o arquivo:", err);
     });
+  });
+};
 
-    // Confirmação no final do download
-    stream.on("end", () => {
-      console.log("Download concluído.");
-      res.end(); // Confirma o encerramento
-    });
+// processVideo
+// const processVideo = async (req, res) => {
+//   const videoUrl = req.latestVideoLink
+//   console.log(videoUrl, "rota: download-mp3")
 
-  } catch (error) {
-    console.error("Erro ao baixar o áudio:", error);
-    res.status(500).json({ error: "Erro ao baixar o áudio." });
-  }
-}
+//   if (!videoUrl || !ytdl.validateURL(videoUrl)) {
+//     return res.status(400).json({ error: "URL de vídeo inválida ou não fornecida." });
+//   }
+
+//   try {
+//     let info = await ytdl.getInfo(videoUrl);
+
+//     // Obtém o título do vídeo
+//     let videoTitle = info.videoDetails.title;
+//     console.log("Título do vídeo:", videoTitle);
+
+//     let audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
+
+//     console.log('Formats with only audio: ' + audioFormats.length);
+//     if (audioFormats.length === 0) {
+//       return res.status(404).json({ error: "Nenhum formato de áudio disponível para este vídeo." });
+//     }
+
+//     // Seleciona o formato de áudio com a melhor qualidade (pode ser ajustado conforme necessário)
+//     const audio = audioFormats[0]; // Ou, por exemplo, selecione o de maior bitrate
+
+//     // Configura o cabeçalho para download
+//     res.setHeader("Content-Disposition", `attachment; filename="${videoTitle}.mp3"`);
+//     res.setHeader("Content-Type", "audio/mpeg");
+//     res.setHeader("X-Video-Title", videoTitle); // Cabeçalho customizado para o título
+
+//     // Baixa o áudio e encaminha para o cliente
+//     const stream = ytdl(videoUrl, {
+//       format: audio,
+//       filter: "audioonly",
+//       quality: "highestaudio",
+//       requestOptions: {
+//         headers: {
+//           "User-Agent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36",
+//         },
+//       },
+//     })
+
+//     // Encaminha o stream para a resposta
+//     stream.pipe(res);
+
+//     // Trata eventos de erro no stream
+//     stream.on("error", (err) => {
+//       console.error("Erro no stream:", err);
+//       // res.status(500).send("Erro ao processar o download.");
+//       res.end(); // Fecha a resposta no caso de erro
+//     });
+
+//     // Confirmação no final do download
+//     stream.on("end", () => {
+//       console.log("Download concluído.");
+//       res.end(); // Confirma o encerramento
+//     });
+
+//   } catch (error) {
+//     console.error("Erro ao baixar o áudio:", error);
+//     res.status(500).json({ error: "Erro ao baixar o áudio." });
+//   }
+// }
 
 router.post("/latest-video", fetchLatestVideo, processVideo);
 
