@@ -32,6 +32,7 @@ const fetchLatestVideo = async (req, res, next) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
+      defaultViewport: null,
       args: [
         '--no-sandbox', // Executa o Chromium sem sandboxing, necessário para que funcione em ambientes restritos como o Heroku.
         '--disable-setuid-sandbox', // Desativa o setuid sandboxing, uma opção adicional para ambientes onde o sandboxing tradicional não é possível.
