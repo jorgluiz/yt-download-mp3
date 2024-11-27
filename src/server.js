@@ -1,16 +1,20 @@
 const express = require('express');
 const app = express();
+const router = express.Router();
 const open = require('open');
 const path = require('path');
-const puppeteer = require("puppeteer");
+
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const puppeteer = require('puppeteer-extra');
+
 const ytdl = require("@distube/ytdl-core"); // CommonJS
 
 const dotenv = require('dotenv');
 dotenv.config()
 
-app.use(express.json()); // Middleware para análise de solicitações JSON
+puppeteer.use(StealthPlugin());
 
-const router = express.Router();
+app.use(express.json()); // Middleware para análise de solicitações JSON
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "public/views"));

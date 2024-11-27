@@ -13,6 +13,8 @@
     "express": "^4.21.1",
     "open": "8.4.0",
     "path": "^0.12.7",
-    "puppeteer": "^23.9.0"
+    "puppeteer": "^23.9.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
