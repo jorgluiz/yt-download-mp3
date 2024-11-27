@@ -30,7 +30,20 @@ const fetchLatestVideo = async (req, res, next) => {
   }
 
   try {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox', // Executa o Chromium sem sandboxing, necessário para que funcione em ambientes restritos como o Heroku.
+        '--disable-setuid-sandbox', // Desativa o setuid sandboxing, uma opção adicional para ambientes onde o sandboxing tradicional não é possível.
+        '--disable-dev-shm-usage', // Usa /tmp ao invés de /dev/shm, útil em ambientes com pouca memória compartilhada.
+        '--disable-accelerated-2d-canvas', // Desativa a aceleração de canvas 2D, o que pode melhorar a estabilidade em ambientes headless.
+        '--no-first-run', // Ignora a mensagem de "primeira execução" do Chrome, acelerando o tempo de inicialização.
+        '--no-zygote', // Desativa o processo zygote, usado no Chromium para gerenciar processos filhos de forma eficiente, reduzindo o overhead.
+        '--single-process', // Executa tudo em um único processo, o que pode ser útil em ambientes restritos em termos de recursos.
+        '--disable-gpu' // Desativa a renderização via GPU, geralmente desnecessária em ambientes headless.
+      ]
+    });
+
     const page = await browser.newPage();
 
     // Acesse o canal do YouTube
