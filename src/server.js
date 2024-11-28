@@ -7,9 +7,7 @@ const path = require('path');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const puppeteer = require('puppeteer-extra');
 
-const ytdl = require("@distube/ytdl-core"); // CommonJS
-const fs = require('fs');
-const cookie = fs.readFileSync('cookies.txt', 'utf-8');
+const ytdl = require("@distube/ytdl-core");
 
 const dotenv = require('dotenv');
 dotenv.config()
@@ -117,7 +115,7 @@ const processVideo = async (req, res) => {
       quality: "highestaudio",
       requestOptions: {
         headers: {
-          "Cookie": cookie,
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36",
         },
       },
     })
