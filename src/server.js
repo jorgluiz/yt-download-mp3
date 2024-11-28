@@ -8,6 +8,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const puppeteer = require('puppeteer-extra');
 
 const ytdl = require("@distube/ytdl-core"); // CommonJS
+const cookie = fs.readFileSync('cookies.txt', 'utf-8');
 
 const dotenv = require('dotenv');
 dotenv.config()
@@ -36,7 +37,6 @@ const fetchLatestVideo = async (req, res, next) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      defaultViewport: null,
       args: [
         '--no-sandbox', // Executa o Chromium sem sandboxing, necessário para que funcione em ambientes restritos como o Heroku.
         '--disable-setuid-sandbox', // Desativa o setuid sandboxing, uma opção adicional para ambientes onde o sandboxing tradicional não é possível.
@@ -46,7 +46,8 @@ const fetchLatestVideo = async (req, res, next) => {
         '--no-zygote', // Desativa o processo zygote, usado no Chromium para gerenciar processos filhos de forma eficiente, reduzindo o overhead.
         '--single-process', // Executa tudo em um único processo, o que pode ser útil em ambientes restritos em termos de recursos.
         '--disable-gpu' // Desativa a renderização via GPU, geralmente desnecessária em ambientes headless.
-      ]
+      ],
+      executablePath: process.env.CHROME_BIN || null, // Necessário para Heroku
     });
 
     const page = await browser.newPage();
