@@ -144,7 +144,6 @@ const processVideo = async (req, res) => {
 
 router.post("/latest-video", fetchLatestVideo, processVideo);
 
-// Attach router to the app
 app.use(router);
 
 
