@@ -1,4 +1,3 @@
-const serverless = require('serverless-http');
 const express = require('express');
 const app = express();
 const router = express.Router();
@@ -110,16 +109,7 @@ const processVideo = async (req, res) => {
     res.setHeader("X-Video-Title", sanitizedTitle); // Cabeçalho customizado para o título
 
     // Baixa o áudio e encaminha para o cliente
-    const stream = ytdl(videoUrl, {
-      format: audio,
-      filter: "audioonly",
-      quality: "highestaudio",
-      requestOptions: {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36",
-        },
-      },
-    })
+    const stream = ytdl(videoUrl, { format: audio, quality: "highestaudio" })
 
     // Encaminha o stream para a resposta
     stream.pipe(res);
@@ -147,4 +137,9 @@ router.post("/latest-video", fetchLatestVideo, processVideo);
 
 app.use(router);
 
-module.exports.handler = serverless(app);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`The server is now running on port ${PORT}`);
+  open(`http://localhost:${PORT}`);
+});

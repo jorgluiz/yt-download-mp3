@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "node --watch api/index.js"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
   },
   "name": "analysisTube",
   "version": "1.0.0",
@@ -17,6 +17,7 @@
     "puppeteer": "^13.0.0",
     "puppeteer-extra": "^3.1.18",
     "puppeteer-extra-plugin-stealth": "^2.7.10",
-    "serverless-http": "^3.2.0"
+    "serverless-http": "^3.2.0",
+    "ytdl-core": "^4.11.5"
   }
 }
