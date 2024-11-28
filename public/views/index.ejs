@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Estilos para o círculo de carregamento */
+    #loadingContainer {
+      display: none;
+      /* Inicialmente oculto */
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+    }
+
+    #loadingCircle {
+      width: 100%;
+      height: 100%;
+      border: 6px solid #f3f3f3;
+      /* Cor de fundo */
+      border-top: 6px solid #3498db;
+      /* Cor do círculo animado */
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Animação de rotação com variação de opacidade */
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+        opacity: 1;
+      }
+
+      50% {
+        transform: rotate(180deg);
+        opacity: 0.2;
+        /* Quase transparente */
+      }
+
+      100% {
+        transform: rotate(360deg);
+        opacity: 1;
+      }
+    }
+
+    label {
+      display: block;
+    }
+
+    img {
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      /* A imagem ocupará 100% da largura do seu container */
+      max-width: 600px;
+      /* A imagem não ultrapassará 600px de largura */
+      height: auto;
+      /* Mantém a proporção da imagem */
+      border: 1px solid #111;
+
+      @media (max-width: 800px) {
+        margin: 50% auto;
+      }
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      margin: 30px 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div>
+      <label for="fname">conta no Twitter:</label>
+      <input type="text" id="inputData" placeholder="exemplo: CNNBrasil">
+      <button onclick="buscarDados()">buscar dados</button>
+    </div>
+  </div>
+  <div class="img-responsive">
+    <img src="../images/analyze-feelings.png" alt="">
+  </div>
+
+  <!-- Container para o círculo de carregamento -->
+  <div id="loadingContainer">
+    <div id="loadingCircle"></div>
+  </div>
+  <script>
+    const body = document.querySelector('body');
+    const newDiv = document.createElement('div');
+    body.appendChild(newDiv);
+
+    const buscarDados = async () => {
+      newDiv.innerHTML = '';
+      const loadingContainer = document.getElementById('loadingContainer');
+      loadingContainer.style.display = 'block';
+
+      const channelYouTube = document.getElementById('inputData').value; // Captura o valor do input
+
+      try {
+        // Envia o valor do input como JSON no corpo da requisição
+        const response = await fetch('/latest-video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ channelYouTube })
+        });
+
+        // Crie um link temporário para baixar o arquivo
+        const videoTitle = response.headers.get('X-Video-Title');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = videoTitle; // Nome do arquivo baixado
+        a.click();
+        window.URL.revokeObjectURL(url); // Libere o URL após o download
+      } catch (error) {
+        console.log("Erro:", error);
+      } finally {
+        loadingContainer.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+
+</html>
