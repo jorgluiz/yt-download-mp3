@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "dev": "node src/server.js"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   },
   "name": "analysisTube",
   "version": "1.0.0",
