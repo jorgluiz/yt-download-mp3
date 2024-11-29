@@ -3,7 +3,7 @@ const app = express();
 const router = express.Router();
 const open = require('open');
 const path = require('path');
-
+const fs = require("fs");
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const puppeteer = require('puppeteer-extra');
 
@@ -77,6 +77,16 @@ const fetchLatestVideo = async (req, res, next) => {
   }
 }
 
+const loadCookies = () => {
+  try {
+    const cookies = JSON.parse(fs.readFileSync("cookies.json", "utf8"));
+    return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join("; ");
+  } catch (error) {
+    console.error("Erro ao carregar cookies:", error);
+    return "";
+  }
+};
+
 // processVideo
 const processVideo = async (req, res) => {
   const videoUrl = req.latestVideoLink
@@ -103,13 +113,27 @@ const processVideo = async (req, res) => {
     // Seleciona o formato de áudio com a melhor qualidade (pode ser ajustado conforme necessário)
     const audio = audioFormats[0]; // Ou, por exemplo, selecione o de maior bitrate
 
+    // Adiciona cookies carregados no cabeçalho da requisição
+    const cookies = loadCookies()
+
     // Configura o cabeçalho para download
     res.setHeader("Content-Disposition", `attachment; filename="${sanitizedTitle}.mp3"`);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("X-Video-Title", sanitizedTitle); // Cabeçalho customizado para o título
 
     // Baixa o áudio e encaminha para o cliente
-    const stream = ytdl(videoUrl, { format: audio, quality: "highestaudio" })
+    // const stream = ytdl(videoUrl, { format: audio, quality: "highestaudio" })
+    const stream = ytdl(videoUrl, {
+      format: audio,
+      filter: "audioonly",
+      quality: "highestaudio",
+      requestOptions: {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+          "Cookie": cookies,
+        },
+      },
+    });
 
     // Encaminha o stream para a resposta
     stream.pipe(res);
