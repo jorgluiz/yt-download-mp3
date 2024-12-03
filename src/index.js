@@ -1,14 +1,18 @@
 const express = require('express');
 const app = express();
-const router = express.Router();
 const cors = require('cors');
 const fs = require("fs");
+const open = require('open');
+const path = require('path');
 const ytdl = require("@distube/ytdl-core");
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
 // Configura o CORS para aceitar requisições de uma origem específica
-app.use(cors());
+app.use(cors({
+  origin: '*', // Permitir todas as origens (ou especifique a sua)
+  exposedHeaders: ['X-Video-Title'] // Exponha o cabeçalho customizado
+}));
 
 const dotenv = require('dotenv');
 dotenv.config()
@@ -16,6 +20,16 @@ dotenv.config()
 puppeteer.use(StealthPlugin());
 
 app.use(express.json()); // Middleware para análise de solicitações JSON
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "public/views"));
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public folder
+
+const router = express.Router();
+
+app.get('/', (req, res) => {
+  res.render('index');
+});
 
 // fetchLatestVideo
 const fetchLatestVideo = async (req, res, next) => {
@@ -102,11 +116,11 @@ const processVideo = async (req, res) => {
     // Converte para minutos e verifica se é maior ou menor que 60 minutos
     const videoDurationInMinutes = Math.floor(videoDurationInSeconds / 60);
 
-    if (videoDurationInMinutes >= 12) {
-      console.log(`O vídeo tem ${videoDurationInMinutes} minutos, mais de 12 minutos.`);
-      res.send({ timeLimit: 'o video tem mais de 11 minutos' })
-      return res.end(); // <-- Encerra explicitamente a resposta
-    }
+    // if (videoDurationInMinutes >= 12) {
+    //   console.log(`O vídeo tem ${videoDurationInMinutes} minutos, mais de 12 minutos.`);
+    //   res.send({ timeLimit: 'o video tem mais de 11 minutos' })
+    //   return res.end(); // <-- Encerra explicitamente a resposta
+    // }
 
     let audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
 
@@ -132,7 +146,7 @@ const processVideo = async (req, res) => {
     const stream = ytdl(videoUrl, {
       format: audio,
       filter: "audioonly",
-      quality: "lowestaudio", // ou 'highestaudio' para máxima qualidade
+      quality: "highestaudio",
       requestOptions: {
         headers: {
           "User-Agent": "Mozilla/5.0",
@@ -171,4 +185,5 @@ app.use(router);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`The server is now running on port ${PORT}`);
+  open(`http://localhost:${PORT}`);
 });
