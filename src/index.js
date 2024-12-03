@@ -1,13 +1,14 @@
 const express = require('express');
 const app = express();
 const router = express.Router();
-const open = require('open');
-const path = require('path');
+const cors = require('cors');
 const fs = require("fs");
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const puppeteer = require('puppeteer-extra');
-
 const ytdl = require("@distube/ytdl-core");
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+// Configura o CORS para aceitar requisições de uma origem específica
+app.use(cors());
 
 const dotenv = require('dotenv');
 dotenv.config()
@@ -16,18 +17,10 @@ puppeteer.use(StealthPlugin());
 
 app.use(express.json()); // Middleware para análise de solicitações JSON
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "public/views"));
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the public folder
-
-app.get('/', (req, res) => {
-  res.render('index');
-});
-
 // fetchLatestVideo
 const fetchLatestVideo = async (req, res, next) => {
   const { channelYouTube } = req.body;
-  console.log(channelYouTube, "fetchLatestVideo")
+  console.log(channelYouTube, "fetchLatestVideo middleware")
 
   if (!channelYouTube) {
     return res.status(400).json({ error: "O parâmetro 'channelYouTube' é obrigatório." });
@@ -90,7 +83,7 @@ const loadCookies = () => {
 // processVideo
 const processVideo = async (req, res) => {
   const videoUrl = req.latestVideoLink
-  console.log(videoUrl, "rota: download-mp3")
+  console.log(videoUrl, "middleware")
 
   if (!videoUrl || !ytdl.validateURL(videoUrl)) {
     return res.status(400).json({ error: "URL de vídeo inválida ou não fornecida." });
@@ -102,6 +95,18 @@ const processVideo = async (req, res) => {
     // Obtém o título do vídeo
     let videoTitle = info.videoDetails.title;
     const sanitizedTitle = videoTitle.replace(/[^a-zA-Z0-9\s]/g, '');
+
+    // Obtém a duração do vídeo em segundos
+    const videoDurationInSeconds = parseInt(info.videoDetails.lengthSeconds, 10);
+
+    // Converte para minutos e verifica se é maior ou menor que 60 minutos
+    const videoDurationInMinutes = Math.floor(videoDurationInSeconds / 60);
+
+    if (videoDurationInMinutes >= 12) {
+      console.log(`O vídeo tem ${videoDurationInMinutes} minutos, mais de 12 minutos.`);
+      res.send({ timeLimit: 'o video tem mais de 11 minutos' })
+      return res.end(); // <-- Encerra explicitamente a resposta
+    }
 
     let audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
 
@@ -119,6 +124,7 @@ const processVideo = async (req, res) => {
     // Configura o cabeçalho para download
     res.setHeader("Content-Disposition", `attachment; filename="${sanitizedTitle}.mp3"`);
     res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader("X-Video-Title", sanitizedTitle); // Cabeçalho customizado para o título
 
     // Baixa o áudio e encaminha para o cliente
@@ -126,10 +132,10 @@ const processVideo = async (req, res) => {
     const stream = ytdl(videoUrl, {
       format: audio,
       filter: "audioonly",
-      quality: "highestaudio",
+      quality: "lowestaudio", // ou 'highestaudio' para máxima qualidade
       requestOptions: {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+          "User-Agent": "Mozilla/5.0",
           "Cookie": cookies,
         },
       },
@@ -157,7 +163,7 @@ const processVideo = async (req, res) => {
   }
 }
 
-router.post("/latest-video", fetchLatestVideo, processVideo);
+router.post("/yt-audio-download", fetchLatestVideo, processVideo);
 
 app.use(router);
 
@@ -165,5 +171,4 @@ app.use(router);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`The server is now running on port ${PORT}`);
-  open(`http://localhost:${PORT}`);
 });
