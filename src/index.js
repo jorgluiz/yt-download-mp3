@@ -177,7 +177,7 @@ const processVideo = async (req, res) => {
   }
 }
 
-router.post("/yt-audio-download", fetchLatestVideo, processVideo);
+router.post("/yt-audio-mp3", fetchLatestVideo, processVideo);
 
 app.use(router);
 
